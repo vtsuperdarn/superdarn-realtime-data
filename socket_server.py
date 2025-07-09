@@ -13,12 +13,15 @@ from process_realtime import connect_to_zmq_socket, receive_socket_msg, dmap_to_
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret')
-socketio = SocketIO(app, cors_allowed_origins="*") 
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
-    socketio.start_background_task(start_listening)
+
+@socketio.on('disconnect')
+def handle_connect():
+    print('Client disconnected')
 
 def start_listening():
     socket = connect_to_zmq_socket(os.getenv('CANADA_ADDR'))
@@ -39,6 +42,8 @@ def start_listening():
         else:
             # No message yet — yield control so Socket.IO can send heartbeats
             eventlet.sleep(0.1)
+
+socketio.start_background_task(start_listening) 
 
 if __name__ == '__main__':
     print("Starting dev server...")

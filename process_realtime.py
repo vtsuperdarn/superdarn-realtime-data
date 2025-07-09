@@ -38,7 +38,7 @@ def connect_to_zmq_socket(address: str):
     :Returns:
         dict: Dictionary of data as returned from dmap.read_dmap_bytes()
     """
-    print(f"connecting to {address} with filters")
+    print(f"Listening on: {address}")
 
     socket = zmq.Context.instance().socket(zmq.SUB)
     socket.setsockopt_string(zmq.SUBSCRIBE, "")  # subscribe to all messages
