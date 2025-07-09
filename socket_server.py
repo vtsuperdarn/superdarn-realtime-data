@@ -23,20 +23,22 @@ def handle_connect():
 def start_listening():
     socket = connect_to_zmq_socket(os.getenv('CANADA_ADDR'))
 
-    while True:
-        try:
-            data, site_name = receive_socket_msg(socket)
-        except zmq.ZMQError as e:
-            if e.errno == zmq.ETERM:
-                break  # interrupted
-            else:
-                raise e
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
 
-        try:
-            print("Creating JSON packet for ", site_name)
-            socketio.emit(site_name, dmap_to_json(data, site_name))
-        except KeyError:
-            print(f"Failed to create JSON packet for {site_name}, corrupt data fields")
+    while True:
+        socks = dict(poller.poll(timeout=1000))  # timeout in milliseconds
+
+        if socket in socks:
+            try:
+                data, site_name = receive_socket_msg(socket)
+                print("Creating JSON packet for ", site_name)
+                socketio.emit(site_name, dmap_to_json(data, site_name))
+            except KeyError:
+                print(f"Failed to create JSON packet for {site_name}, corrupt data fields")
+        else:
+            # No message yet — yield control so Socket.IO can send heartbeats
+            eventlet.sleep(0.1)
 
 if __name__ == '__main__':
     print("Starting dev server...")
