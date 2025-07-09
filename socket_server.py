@@ -1,16 +1,19 @@
 """The socket IO server that sends the JSON packets"""
+import eventlet
+eventlet.monkey_patch()  # Patch standard library to use eventlet
+
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import zmq
 from flask import Flask
 from flask_socketio import SocketIO
 from process_realtime import connect_to_zmq_socket, receive_socket_msg, dmap_to_json
-from dotenv import load_dotenv
-
-DEFAULT_HOST = '0.0.0.0'
-DEFAULT_PORT = 5000
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*") #TODO: specify CORS policy?
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret')
+socketio = SocketIO(app, cors_allowed_origins="*") 
 
 @socketio.on('connect')
 def handle_connect():
@@ -30,10 +33,11 @@ def start_listening():
                 raise e
 
         try:
+            print("Creating JSON packet for ", site_name)
             socketio.emit(site_name, dmap_to_json(data, site_name))
         except KeyError:
             print(f"Failed to create JSON packet for {site_name}, corrupt data fields")
 
 if __name__ == '__main__':
-    load_dotenv()
-    socketio.run(app, host=os.getenv('HOST', DEFAULT_HOST), port=os.getenv('PORT', DEFAULT_PORT), debug=os.getenv('DEBUG', 'false') == 'true')
+    print("Starting dev server...")
+    socketio.run(app, host='0.0.0.0', port=5003, debug=True)
