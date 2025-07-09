@@ -1,3 +1,4 @@
 darn-dmap
 flask-socketio
 zmq
+python-dotenv
