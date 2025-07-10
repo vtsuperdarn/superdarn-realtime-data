@@ -120,7 +120,8 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
         "elevation": elev_arr,
         "power": power_arr,
         "velocity": vel_arr,
-        "width": width_arr
+        "width": width_arr,
+        "g_scatter": dmap_dict["gflg"]
     }
 
 def format_dmap_date(dmap_dict: dict):
