@@ -83,25 +83,23 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
     elev_arr = [0.0] * nrang
     vel_arr = [0.0] * nrang
     width_arr = [0.0] * nrang
+    g_scatter_arr = [0] * nrang
 
     slist = dmap_dict["slist"]
 
-    # Necessary?
-    powers = dmap_dict["p_l"]
-    for pwr, s, in zip(powers, slist):
+    for pwr, s, in zip(dmap_dict["p_l"], slist):
          power_arr[s] = pwr 
     
-    elevs = dmap_dict["elv"]
-    for elev, s, in zip(elevs, slist):
+    for elev, s, in zip(dmap_dict["elv"], slist):
         elev_arr[s] = elev 
     
-    # TODO: Get ground scatter
-    vels = dmap_dict["v"]
-    for vel, s, in zip(vels, slist):
+    for vel, s, in zip(dmap_dict["v"], slist):
         vel_arr[s] = vel 
-    
-    widths = dmap_dict["w_l"]
-    for width, s, in zip(widths, slist):
+
+    for g_scatter, s, in zip(dmap_dict["gflg"], slist):
+        g_scatter_arr[s] = int(g_scatter)
+
+    for width, s, in zip(dmap_dict["w_l"], slist):
         width_arr[s] = width 
 
     return {
@@ -121,7 +119,7 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
         "power": power_arr,
         "velocity": vel_arr,
         "width": width_arr,
-        "g_scatter": dmap_dict["gflg"]
+        "g_scatter": g_scatter_arr
     }
 
 def format_dmap_date(dmap_dict: dict):
