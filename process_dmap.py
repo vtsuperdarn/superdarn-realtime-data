@@ -2,6 +2,7 @@
 Proccesses DMAP as JSON packets for the frontend.
 """
 import datetime as dt
+import logging
 from typing import TypedDict
 
 # This is the data extracted from the dmap that gets
@@ -41,22 +42,26 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
     width_arr = [0.0] * nrang
     g_scatter_arr = [0] * nrang
 
-    slist = dmap_dict["slist"]
+    if "slist" in dmap_dict:
+        slist = dmap_dict["slist"]
 
-    for pwr, s, in zip(dmap_dict["p_l"], slist):
-         power_arr[s] = float(pwr) 
-    
-    for elev, s, in zip(dmap_dict["elv"], slist):
-        elev_arr[s] = float(elev) 
-    
-    for vel, s, in zip(dmap_dict["v"], slist):
-        vel_arr[s] = float(vel) 
+        for pwr, s, in zip(dmap_dict["p_l"], slist):
+            power_arr[s] = float(pwr) 
+        
+        for elev, s, in zip(dmap_dict["elv"], slist):
+            elev_arr[s] = float(elev) 
+        
+        for vel, s, in zip(dmap_dict["v"], slist):
+            vel_arr[s] = float(vel) 
 
-    for g_scatter, s, in zip(dmap_dict["gflg"], slist):
-        g_scatter_arr[s] = int(g_scatter)
+        for g_scatter, s, in zip(dmap_dict["gflg"], slist):
+            g_scatter_arr[s] = int(g_scatter)
 
-    for width, s, in zip(dmap_dict["w_l"], slist):
-        width_arr[s] = float(width) 
+        for width, s, in zip(dmap_dict["w_l"], slist):
+            width_arr[s] = float(width)
+    else:
+        # Some packets do not have slist. Why?
+        logging.warning(f"Missing slist in dmap data for {site_name}") 
 
     return {
         "site_name": site_name,

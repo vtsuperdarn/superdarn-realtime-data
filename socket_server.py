@@ -8,11 +8,14 @@ load_dotenv()
 import logging
 import os
 import json
+import zmq
 from flask import Flask
 from flask_socketio import SocketIO
 from process_dmap import dmap_to_json
 from canada_connections import connect_to_zmq_socket, receive_zmq_socket_msg
 from radar_client import RadarClient
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret')
@@ -20,15 +23,20 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    logging.info('Client connected')
 
 @socketio.on('disconnect')
 def handle_connect():
-    print('Client disconnected')
+    logging.info('Client disconnected')
 
 def radar_listener(host, port, site_name):
     """Listens for data from a SuperDARN radar client and sends JSON packets."""
-    client = RadarClient(host, port)
+    try:
+        client = RadarClient(host, port)
+        logging.info(f"Connected to {site_name} at {host}:{port}")
+    except Exception as e:
+        logging.error(f"Failed to connect to {site_name} at {host}:{port} - {e}")
+        return
 
     while True:
         dmap_data = client.receive_data()
@@ -42,12 +50,16 @@ def zmq_listener():
     """Listens for data from SuperDARN Canada radar sockets using ZMQ."""
     socket = connect_to_zmq_socket(os.getenv('CANADA_ADDR'))
 
-    while True:
-        ca_dmap, ca_site_name = receive_zmq_socket_msg(socket)
-        print(ca_dmap, ca_site_name)
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
 
-        if ca_dmap:
-            send_json_packets(ca_dmap, ca_site_name)
+    while True:
+        socks = dict(poller.poll(timeout=1000))  # timeout in milliseconds
+
+        if socket in socks:
+            ca_dmap, ca_site_name = receive_zmq_socket_msg(socket)
+            if ca_dmap:
+                send_json_packets(ca_dmap, ca_site_name)
         else:
             eventlet.sleep(0.1)
 
@@ -55,13 +67,14 @@ def send_json_packets(dmap_data: dict, site_name: str):
     """Sends JSON packets to connected clients."""
     try:
         socketio.emit(site_name, dmap_to_json(dmap_data, site_name))
-        print(f"Successfully created JSON packet for {site_name}")
+        logging.info(f"Successfully created JSON packet for {site_name}")
     except KeyError as k:
         logging.warning(f"Failed to create JSON packet for {site_name}, missing data field: {k}")
 
 def start_listeners():
     """Starts the radar listeners for each configured radar."""
     logging.info("Starting radar listeners...")
+
     # Load the radar configuration from radars.config.json
     try:
         radars_config = json.load(open('radars.config.json'))
