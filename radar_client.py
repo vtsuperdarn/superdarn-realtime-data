@@ -1,0 +1,96 @@
+"""
+Manages the reading of raw (bytes) data packets into a DMAP dict from a SuperDARN radar socket.
+"""
+import socket
+import dmap
+
+PACKET_SIZE = 8  # Size of the packet header
+ENCODING_IDENTIFIER = [73, 8, 30, 0]  # Encoding identifier for dmap files
+
+class RadarClient:
+    """
+    Handles the connection and data retrieval from a SuperDARN radar client.
+    """
+    def __init__(self, host: str, port: int):
+        """
+        Initializes the RadarClient with the given host and port.
+
+        :Args:
+            host (str): The hostname or IP address of the radar server.
+            port (int): The port number to connect to.
+        """
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect((host, port))
+
+    def __del__(self):
+        """Ensures the client socket is closed when the object is deleted."""
+        self.client_socket.close()
+
+    def receive_data(self) -> dict | None:
+        """
+        Receives and processes data packets from the radar server.
+
+        :Returns:
+            dict | None: Returns the dmap data as a dictionary if successful, otherwise None.
+        """
+        packet = self.client_socket.recv(PACKET_SIZE)
+
+        if not verify_packet_encoding(packet):
+            # Not a dmap packet, skip processing
+            return None
+
+        # Next 4 bytes represent the length of the data
+        block_size = int.from_bytes(packet[4:8], byteorder='little')
+
+        # If the block size is invalid, skip processing
+        if block_size <= 0 or block_size > 10000:
+            print("Invalid data length of {0}".format(block_size))
+            return None
+
+        raw_data = read_data_block(self.client_socket, block_size)
+
+        try:
+            return dmap.read_dmap_bytes(raw_data)[0]
+        except Exception as e:
+            print(f"Error reading dmap data: {e}")
+            return None
+        
+
+def verify_packet_encoding(packet: bytes) -> bool:
+    """
+    Verifies if a packet received from a socket is a dmap file based on the
+    [encoding identifier](https://radar-software-toolkit-rst.readthedocs.io/en/latest/references/general/dmap_data/#block-format).
+
+    :Args:
+        packet (bytes): The raw packet data.
+
+    :Returns:
+        bool: True if the packet is valid, False otherwise.
+    """
+    if not packet or len(packet) < PACKET_SIZE:
+        return False
+    
+    header = list(packet[:4])
+
+    return header == ENCODING_IDENTIFIER
+
+def read_data_block(client_socket: socket.socket, block_size: int) -> bytes:
+    """
+    Reads a block of data from the radar socket.
+
+    :Args:
+        client_socket (socket.socket): The socket connected to the radar server.
+        block_size (int): The size of the block to read.
+
+    :Returns:
+        bytes: The raw data read from the socket.
+    """
+    data = b''
+    byte_counter = block_size
+
+    while len(data) < block_size:
+        rec_data = client_socket.recv(byte_counter)
+        data += rec_data
+        byte_counter -= len(rec_data)
+
+    return data

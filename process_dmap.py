@@ -1,10 +1,7 @@
 """
-Handles receiving and processing realtime SuperDARN data from the server
+Proccesses DMAP as JSON packets for the frontend.
 """
 import datetime as dt
-import dmap
-import zlib
-import zmq
 from typing import TypedDict
 
 # This is the data extracted from the dmap that gets
@@ -25,47 +22,6 @@ class JsonPacket(TypedDict):
     power: list[float]
     velocity: list[float]
     width: list[float]
-
-def connect_to_zmq_socket(address: str):
-    """
-    Connects to `address` with a zmq.SUB connection, with all filters applied.
-    Calls `handler(data)` on the received data.
-
-    :Args:
-        address: str
-            formatted as hostname:port
-    
-    :Returns:
-        dict: Dictionary of data as returned from dmap.read_dmap_bytes()
-    """
-    print(f"Listening on: {address}")
-
-    socket = zmq.Context.instance().socket(zmq.SUB)
-    socket.setsockopt_string(zmq.SUBSCRIBE, "")  # subscribe to all messages
-    socket.connect(f"tcp://{address}")
-
-    return socket
-
-def receive_socket_msg(socket):
-    """
-    Receives message from a ZMQ socket
-
-    :Args:
-        address (str): Address formatted as hostname:port
-    
-    :Returns: 
-        tuple[dict, str]: A tuple containing:
-            - data (dict): Dictionary of data as returned from dmap.read_dmap_bytes()
-            - site_name (str): Name of radar site
-    """
-    try:
-        msg = socket.recv_multipart(copy=True) 
-        site_name, compressed_bytes = msg
-    except ValueError:
-        raise ValueError(f"Unexpected message: {msg}")
-
-    decompressed_msg = zlib.decompress(compressed_bytes)
-    return dmap.read_dmap_bytes(decompressed_msg)[0], site_name.decode('utf-8')  # should be list[bytes] of 1 record
 
 def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
     """
@@ -88,31 +44,31 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
     slist = dmap_dict["slist"]
 
     for pwr, s, in zip(dmap_dict["p_l"], slist):
-         power_arr[s] = pwr 
+         power_arr[s] = float(pwr) 
     
     for elev, s, in zip(dmap_dict["elv"], slist):
-        elev_arr[s] = elev 
+        elev_arr[s] = float(elev) 
     
     for vel, s, in zip(dmap_dict["v"], slist):
-        vel_arr[s] = vel 
+        vel_arr[s] = float(vel) 
 
     for g_scatter, s, in zip(dmap_dict["gflg"], slist):
         g_scatter_arr[s] = int(g_scatter)
 
     for width, s, in zip(dmap_dict["w_l"], slist):
-        width_arr[s] = width 
+        width_arr[s] = float(width) 
 
     return {
         "site_name": site_name,
-        "beam": dmap_dict["bmnum"],
+        "beam": int(dmap_dict["bmnum"]),
         "cp": "{0}({1})".format(convert_cp_to_text(dmap_dict["cp"]), dmap_dict["cp"]),
-        "frang": dmap_dict["frang"],
-        "nave": dmap_dict["nave"],
-        "freq": dmap_dict["tfreq"],
+        "frang": int(dmap_dict["frang"]),
+        "nave": int(dmap_dict["nave"]),
+        "freq": int(dmap_dict["tfreq"]),
         "noise": int(dmap_dict["noise.sky"]),
         "nrang": nrang,
-        "rsep": dmap_dict["rsep"],
-        "stid": dmap_dict["stid"],
+        "rsep": int(dmap_dict["rsep"]),
+        "stid": int(dmap_dict["stid"]),
         "time": format_dmap_date(dmap_dict),
 
         "elevation": elev_arr,

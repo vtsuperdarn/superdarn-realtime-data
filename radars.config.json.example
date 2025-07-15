@@ -1,0 +1,18 @@
+{
+    "kod" : {
+        "host": "<host-ip>",
+        "port": 9999
+    },
+    "mcm" : {
+        "host": "<host-ip>",
+        "port": 9999
+    },
+    "ksr" : {
+        "host": "<host-ip>",
+        "port": 9999
+    },
+    "sps" : {
+        "host": "<host-ip>",
+        "port": 9999
+    }
+}
