@@ -3,6 +3,7 @@ Manages the reading of raw (bytes) data packets into a DMAP dict from a SuperDAR
 """
 import socket
 import dmap
+import logging
 
 PACKET_SIZE = 8  # Size of the packet header
 ENCODING_IDENTIFIER = [73, 8, 30, 0]  # Encoding identifier for dmap files
@@ -21,6 +22,8 @@ class RadarClient:
         """
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((host, port))
+        self.host = host
+        self.port = port
 
     def __del__(self):
         """Ensures the client socket is closed when the object is deleted."""
@@ -34,6 +37,11 @@ class RadarClient:
             dict | None: Returns the dmap data as a dictionary if successful, otherwise None.
         """
         packet = self.client_socket.recv(PACKET_SIZE)
+
+        if not packet:
+            # Empty packet usually indicates the connection is lost, attempt to reconnect
+            logging.info(f"Connection to {self.host}:{self.port} lost, attempting to reconnect...")
+            self.client_socket.connect((self.host, self.port))
 
         if not verify_packet_encoding(packet):
             # Not a dmap packet, skip processing
