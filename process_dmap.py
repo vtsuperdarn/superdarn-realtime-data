@@ -74,6 +74,9 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
         "nrang": nrang,
         "rsep": int(dmap_dict["rsep"]),
         "stid": int(dmap_dict["stid"]),
+        "scan": int(dmap_dict["scan"]),
+        "gflg": dmap_dict["gflg"].tolist(),
+        "v": dmap_dict["v"].tolist(),
         "time": format_dmap_date(dmap_dict),
 
         "elevation": elev_arr,
