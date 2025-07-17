@@ -41,7 +41,10 @@ class RadarClient:
         if not packet:
             # Empty packet usually indicates the connection is lost, attempt to reconnect
             logging.info(f"Connection to {self.host}:{self.port} lost, attempting to reconnect...")
+            self.client_socket.close()
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
+            return None  # No data to process this cycle
 
         if not verify_packet_encoding(packet):
             # Not a dmap packet, skip processing
