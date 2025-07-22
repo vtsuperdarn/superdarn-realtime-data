@@ -12,7 +12,7 @@ class RadarClient:
     """
     Handles the connection and data retrieval from a SuperDARN radar client.
     """
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, timeout: float = 10.0):
         """
         Initializes the RadarClient with the given host and port.
 
@@ -21,9 +21,11 @@ class RadarClient:
             port (int): The port number to connect to.
         """
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.settimeout(timeout)  # Set a timeout for blocking socket operations
         self.client_socket.connect((host, port))
         self.host = host
         self.port = port
+        self.timeout = timeout
 
     def __del__(self):
         """Ensures the client socket is closed when the object is deleted."""
@@ -36,17 +38,24 @@ class RadarClient:
         :Returns:
             dict | None: Returns the dmap data as a dictionary if successful, otherwise None.
         """
-        packet = self.client_socket.recv(PACKET_SIZE)
+        try:
+            packet = self.client_socket.recv(PACKET_SIZE)
+        except socket.timeout:
+            logging.warning(f"Socket timeout on {self.host}:{self.port}, attempting to reconnect...")
+            self.reconnect()
+            return None
+        except Exception as e:
+            logging.error(f"Socket error on {self.host}:{self.port}: {e}, attempting to reconnect...")
+            self.reconnect()
+            return None
 
         if not packet:
-            # Empty packet usually indicates the connection is lost, attempt to reconnect
-            logging.info(f"Connection to {self.host}:{self.port} lost, attempting to reconnect...")
-            self.client_socket.close()
-            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.client_socket.connect((self.host, self.port))
-            return None  # No data to process this cycle
+            logging.info(f"Connection on {self.host}:{self.port} sending empty packets, attempting to reconnect...")
+            self.reconnect()
+            return None
 
         if not verify_packet_encoding(packet):
+            logging.warning(f"Received invalid packet from {self.host}:{self.port}")
             # Not a dmap packet, skip processing
             return None
 
@@ -65,6 +74,12 @@ class RadarClient:
         except Exception as e:
             print(f"Error reading dmap data: {e}")
             return None
+
+    def reconnect(self):
+        self.client_socket.close()
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.settimeout(self.timeout)
+        self.client_socket.connect((self.host, self.port))
         
 
 def verify_packet_encoding(packet: bytes) -> bool:
