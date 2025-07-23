@@ -12,7 +12,7 @@ class RadarClient:
     """
     Handles the connection and data retrieval from a SuperDARN radar client.
     """
-    def __init__(self, host: str, port: int, timeout: float = 10.0):
+    def __init__(self, host: str, port: int, timeout: float = 20.0):
         """
         Initializes the RadarClient with the given host and port.
 
@@ -26,6 +26,8 @@ class RadarClient:
         self.host = host
         self.port = port
         self.timeout = timeout
+        # Keep track of invalid packets received
+        self._invalid_packet_count = 0
 
     def __del__(self):
         """Ensures the client socket is closed when the object is deleted."""
@@ -38,6 +40,11 @@ class RadarClient:
         :Returns:
             dict | None: Returns the dmap data as a dictionary if successful, otherwise None.
         """
+        if self._invalid_packet_count > 10:
+            logging.error(f"Too many invalid packets received from {self.host}:{self.port}, reconnecting...")
+            self.reconnect()
+            self._invalid_packet_count = 0
+
         try:
             packet = self.client_socket.recv(PACKET_SIZE)
         except socket.timeout:
@@ -51,11 +58,12 @@ class RadarClient:
 
         if not packet:
             logging.info(f"Connection on {self.host}:{self.port} sending empty packets, attempting to reconnect...")
-            self.reconnect()
+            self._invalid_packet_count += 1
             return None
 
         if not verify_packet_encoding(packet):
             logging.warning(f"Received invalid packet from {self.host}:{self.port}")
+            self._invalid_packet_count += 1
             # Not a dmap packet, skip processing
             return None
 
