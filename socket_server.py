@@ -39,11 +39,15 @@ def radar_listener(host, port, site_name):
         return
 
     while True:
-        dmap_data = client.receive_data()
+        try:
+            dmap_data = client.receive_data()
 
-        if dmap_data:
-            send_json_packets(dmap_data, site_name)
-        else:
+            if dmap_data:
+                send_json_packets(dmap_data, site_name)
+            else:
+                eventlet.sleep(0.1)
+        except Exception as e:
+            logging.error(f"Error receiving data from {site_name} at {host}:{port} - {e}")
             eventlet.sleep(0.1)
 
 def zmq_listener():

@@ -57,7 +57,7 @@ class RadarClient:
             return None
 
         if not packet:
-            logging.info(f"Connection on {self.host}:{self.port} sending empty packets, attempting to reconnect...")
+            logging.info(f"Connection on {self.host}:{self.port} sending empty packets")
             self._invalid_packet_count += 1
             return None
 
@@ -84,10 +84,13 @@ class RadarClient:
             return None
 
     def reconnect(self):
-        self.client_socket.close()
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.settimeout(self.timeout)
-        self.client_socket.connect((self.host, self.port))
+        try:
+            self.client_socket.close()
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket.settimeout(self.timeout)
+            self.client_socket.connect((self.host, self.port))
+        except Exception as e:
+            logging.error(f"Failed to reconnect to {self.host}:{self.port}: {e}")
         
 
 def verify_packet_encoding(packet: bytes) -> bool:
