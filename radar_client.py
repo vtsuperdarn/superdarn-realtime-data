@@ -41,7 +41,7 @@ class RadarClient:
             dict | None: Returns the dmap data as a dictionary if successful, otherwise None.
         """
         if self._invalid_packet_count > 10:
-            logging.error(f"Too many invalid packets received from {self.host}:{self.port}, reconnecting...")
+            logging.warning(f"Too many invalid packets received from {self.host}:{self.port}, reconnecting...")
             self.reconnect()
             self._invalid_packet_count = 0
 
@@ -57,12 +57,12 @@ class RadarClient:
             return None
 
         if not packet:
-            logging.info(f"Connection on {self.host}:{self.port} sending empty packets")
+            logging.debug(f"Connection on {self.host}:{self.port} sending empty packets")
             self._invalid_packet_count += 1
             return None
 
         if not verify_packet_encoding(packet):
-            logging.warning(f"Received invalid packet from {self.host}:{self.port}")
+            logging.debug(f"Received invalid packet from {self.host}:{self.port}")
             self._invalid_packet_count += 1
             # Not a dmap packet, skip processing
             return None

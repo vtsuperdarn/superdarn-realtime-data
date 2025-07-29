@@ -61,7 +61,7 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
             width_arr[s] = float(width)
     else:
         # Some packets do not have slist. Why?
-        logging.warning(f"Missing slist in dmap data for {site_name}") 
+        logging.debug(f"Missing slist in dmap data for {site_name}") 
     
     num_echoes, num_ionosph_echoes, num_grd_sctr_echoes = get_num_echoes(dmap_dict)
 

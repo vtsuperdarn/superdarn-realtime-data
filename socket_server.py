@@ -14,6 +14,7 @@ from flask_socketio import SocketIO
 from process_dmap import dmap_to_json
 from canada_connections import connect_to_zmq_socket, receive_zmq_socket_msg
 from radar_client import RadarClient
+from process_csv import get_echoes_csv, write_echoes_csv
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -44,6 +45,8 @@ def radar_listener(host, port, site_name):
 
             if dmap_data:
                 send_json_packets(dmap_data, site_name)
+                write_echoes_csv(dmap_data, site_name)
+                send_echoes_json_packets(site_name)
             else:
                 eventlet.sleep(0.1)
         except Exception as e:
@@ -64,6 +67,8 @@ def zmq_listener():
             ca_dmap, ca_site_name = receive_zmq_socket_msg(socket)
             if ca_dmap:
                 send_json_packets(ca_dmap, ca_site_name)
+                write_echoes_csv(ca_dmap, ca_site_name)
+                send_echoes_json_packets(ca_site_name)
         else:
             eventlet.sleep(0.1)
 
@@ -74,6 +79,20 @@ def send_json_packets(dmap_data: dict, site_name: str):
         logging.info(f"Successfully created JSON packet for {site_name}")
     except KeyError as k:
         logging.warning(f"Failed to create JSON packet for {site_name}, missing data field: {k}")
+
+def send_echoes_json_packets(site_name: str):
+    """Sends echoe CSV packets to connected clients."""
+    csv_data = get_echoes_csv(site_name)
+
+    if csv_data is None:
+        logging.error(f"Failed to retrieve CSV data for {site_name}")
+        return
+
+    try:
+        socketio.emit(f'{site_name}/echoes', csv_data)
+        logging.info(f"Successfully sent echo data for {site_name}")
+    except Exception as e:
+        logging.error(f"Failed to send echo data for {site_name}: {e}")
 
 def start_listeners():
     """Starts the radar listeners for each configured radar."""

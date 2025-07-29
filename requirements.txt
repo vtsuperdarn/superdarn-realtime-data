@@ -4,3 +4,4 @@ zmq
 python-dotenv
 eventlet
 gunicorn
+pandas
