@@ -5,9 +5,35 @@ import datetime as dt
 import logging
 import pandas as pd
 import os
+from process_dmap import convert_cp_to_text
 
 CSV_HEADERS = ['Timestamp', 'Beam_Number', 'Num_Echoes',
                'Num_Ionosph_Echoes', 'Num_Gnd_sctr_Echoes', 'Scan']
+
+def get_echoes_json(dmap_dict: dict, site_name: str):
+    """Convert dmap data to json packet for echoes"""
+    echoes_dict = get_echoes_csv(site_name)
+
+    return {
+        "site-name": site_name,
+        "date-received": dt.datetime.now().isoformat(),
+        "beam": int(dmap_dict["bmnum"]),
+        "cp": "{0}({1})".format(convert_cp_to_text(dmap_dict["cp"]), dmap_dict["cp"]),
+        "frang": int(dmap_dict["frang"]),
+        "nave": int(dmap_dict["nave"]),
+        "freq": int(dmap_dict["tfreq"]),
+        "noise": int(dmap_dict["noise.sky"]),
+        "nrang": int(dmap_dict["nrang"]),
+        "rsep": int(dmap_dict["rsep"]),
+        "stid": int(dmap_dict["stid"]),
+        "scan": int(dmap_dict["scan"]),
+        "gflg": dmap_dict["gflg"].tolist(),
+        "v": dmap_dict["v"].tolist(),
+        "timestamps": echoes_dict["Timestamp"],
+        "num_echoes": echoes_dict["Num_Echoes"],
+        "num_ionosph_echoes": echoes_dict["Num_Ionosph_Echoes"],
+        "num_gnd_sctr_echoes": echoes_dict["Num_Gnd_sctr_Echoes"],
+    }
 
 def get_echoes_csv(site_name: str):
     """Retrieves echoes CSV data for a given radar."""
