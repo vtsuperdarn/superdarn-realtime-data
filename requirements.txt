@@ -5,3 +5,5 @@ python-dotenv
 eventlet
 gunicorn
 pandas
+Flask-SQLAlchemy
+flask-cors

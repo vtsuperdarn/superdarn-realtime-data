@@ -9,7 +9,7 @@ import traceback
 PACKET_SIZE = 8  # Size of the packet header
 ENCODING_IDENTIFIER = [73, 8, 30, 0]  # Encoding identifier for dmap files
 
-class RadarClient:
+class RadarSocketClient:
     """
     Handles the connection and data retrieval from a SuperDARN radar client.
     """

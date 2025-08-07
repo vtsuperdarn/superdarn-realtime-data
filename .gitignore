@@ -1,4 +1,8 @@
 **/__pycache__
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 .venv
 .env
 radars.config.json

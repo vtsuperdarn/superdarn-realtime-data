@@ -3,28 +3,8 @@ Proccesses DMAP as JSON packets for the frontend.
 """
 import datetime as dt
 import logging
-from typing import TypedDict
 
-# This is the data extracted from the dmap that gets
-# sent to the frontend
-class JsonPacket(TypedDict):
-    site_name: str
-    beam: int
-    cp: str
-    frang: int
-    freq: int
-    noise: int
-    nrang: int
-    rsep: int
-    stid: int
-    time: str
-
-    elevation: list[float]
-    power: list[float]
-    velocity: list[float]
-    width: list[float]
-
-def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
+def dmap_to_json(dmap_dict: dict, site_name: str) -> dict:
     """
     Convert dmap data to json packet
 
@@ -62,8 +42,6 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
     else:
         # Some packets do not have slist. Why?
         logging.debug(f"Missing slist in dmap data for {site_name}") 
-    
-    num_echoes, num_ionosph_echoes, num_grd_sctr_echoes = get_num_echoes(dmap_dict)
 
     return {
         "site_name": site_name,
@@ -85,11 +63,7 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> JsonPacket:
         "power": power_arr,
         "velocity": vel_arr,
         "width": width_arr,
-        "g_scatter": g_scatter_arr,
-
-        "num_echoes": num_echoes,
-        "num_ionosph_echoes": num_ionosph_echoes,
-        "num_grd_sctr_echoes": num_grd_sctr_echoes
+        "g_scatter": g_scatter_arr
     }
 
 def format_dmap_date(dmap_dict: dict):
@@ -172,28 +146,3 @@ def convert_cp_to_text(cp: int):
 		3350:	"ulfscan",
 		-3350:	"ulfscan",
 		}.get(cp,"unknown")
-
-def get_num_echoes(dmap_dict: dict):
-    """
-    Get number of echoes, number of ground scatter echoes,
-    and number of ionospheric echoes in a dmap 
-
-    :Args:
-        dmap_dict (dict): The DMAP recieved from the socket
-    
-    :Returns:
-        tuple[int, int, int]: A tuple containing:
-            - num_echoes (int): Total number of echoes
-            - num_ionosph_echoes (int): Number of ionospheric echoes
-            - num_grd_sctr_echoes (int): Number of ground scatter echoes
-    """
-    # Total number of echoes is len(slist), which is number of velocity values in the dmap dict
-    # Number of ground scatter echoes is the number of echoes where the ground scatter flag is 1
-    # Number of ionospheric echoes is the number of echoes where the ground scatter flag is 0
-    grd_sctr_flags = dmap_dict["gflg"].tolist()
-    num_echoes = len(dmap_dict["gflg"].tolist())
-
-    num_grd_sctr_echoes = grd_sctr_flags.count(1)
-    num_ionosph_echoes = grd_sctr_flags.count(0)
-
-    return num_echoes, num_ionosph_echoes, num_grd_sctr_echoes
