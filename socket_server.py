@@ -9,6 +9,7 @@ import logging
 import os
 import json
 import zmq
+import traceback
 from flask import Flask
 from flask_socketio import SocketIO
 from process_dmap import dmap_to_json
@@ -36,7 +37,7 @@ def radar_listener(host, port, site_name):
         client = RadarClient(host, port)
         logging.info(f"Connected to {site_name} at {host}:{port}")
     except Exception as e:
-        logging.error(f"Failed to connect to {site_name} at {host}:{port} - {e}")
+        logging.error(f"Failed to connect to {site_name} at '{host}:{port}':\n{traceback.format_exc()}")
         return
 
     while True:
@@ -50,7 +51,7 @@ def radar_listener(host, port, site_name):
             else:
                 eventlet.sleep(0.1)
         except Exception as e:
-            logging.error(f"Error receiving data from {site_name} at {host}:{port} - {e}")
+            logging.error(f"Error receiving data from {site_name} at '{host}:{port}':\n{traceback.format_exc()}")
             eventlet.sleep(0.1)
 
 def zmq_listener():
@@ -73,7 +74,7 @@ def zmq_listener():
             else:
                 eventlet.sleep(0.1)
         except Exception as e:
-            logging.error(f"Error in ZMQ listener: {e}")
+            logging.error(f"Error in ZMQ listener:\n{traceback.format_exc()}")
             eventlet.sleep(0.1)
 
 def send_json_packets(dmap_data: dict, site_name: str):
@@ -96,7 +97,7 @@ def send_echoes_json_packets(dmap_dict: dict, site_name: str):
         socketio.emit(f'{site_name}/echoes', csv_data)
         logging.info(f"Successfully sent echo data for {site_name}")
     except Exception as e:
-        logging.error(f"Failed to send echo data for {site_name}: {e}")
+        logging.error(f"Failed to send echo data for {site_name}:\n{traceback.format_exc()}")
 
 def start_listeners():
     """Starts the radar listeners for each configured radar."""
@@ -106,7 +107,7 @@ def start_listeners():
     try:
         radars_config = json.load(open('radars.config.json'))
     except Exception as e:
-        logging.error(f"Failed to load radar configuration: {e}")
+        logging.error(f"Failed to load radar configuration:\n{traceback.format_exc()}")
         return
 
     for site_name, config in radars_config.items():

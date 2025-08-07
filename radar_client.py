@@ -4,6 +4,7 @@ Manages the reading of raw (bytes) data packets into a DMAP dict from a SuperDAR
 import socket
 import dmap
 import logging
+import traceback
 
 PACKET_SIZE = 8  # Size of the packet header
 ENCODING_IDENTIFIER = [73, 8, 30, 0]  # Encoding identifier for dmap files
@@ -72,7 +73,7 @@ class RadarClient:
 
         # If the block size is invalid, skip processing
         if block_size <= 0 or block_size > 10000:
-            print("Invalid data length of {0}".format(block_size))
+            logging.debug("Invalid data length of {0}".format(block_size))
             return None
 
         raw_data = read_data_block(self.client_socket, block_size)
@@ -80,7 +81,7 @@ class RadarClient:
         try:
             return dmap.read_dmap_bytes(raw_data)[0]
         except Exception as e:
-            print(f"Error reading dmap data: {e}")
+            logging.error(f"Error reading dmap data:\n{traceback.format_exc()}")
             return None
 
     def reconnect(self):
@@ -90,7 +91,7 @@ class RadarClient:
             self.client_socket.settimeout(self.timeout)
             self.client_socket.connect((self.host, self.port))
         except Exception as e:
-            logging.error(f"Failed to reconnect to {self.host}:{self.port}: {e}")
+            logging.error(f"Failed to reconnect to {self.host}:{self.port}:\n{traceback.format_exc()}")
         
 
 def verify_packet_encoding(packet: bytes) -> bool:
