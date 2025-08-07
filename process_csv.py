@@ -99,6 +99,10 @@ def write_echoes_csv(dmap_dict: dict, site_name: str):
 
     if not output_dir:
         raise ValueError("CSV_DIR environment variable is not set.")
+    
+    if not os.path.exists(output_dir):
+        logging.info(f"Output directory '{output_dir}' does not exist, creating it...")
+        os.makedirs(output_dir)
 
     # Check if directory exists, create it if not
     subdir_name = now.strftime("%Y-%m-%d")
