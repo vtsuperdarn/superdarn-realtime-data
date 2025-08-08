@@ -23,7 +23,10 @@ def create_app():
         "http://localhost:5002",
         "http://127.0.0.1:5002",
         "http://localhost",
-        "http://127.0.0.1"
+        "http://127.0.0.1",
+        "vt.superdarn.org",
+        "vt.superdarn.org:5002",
+        "vt.superdarn.org:5003"
     ])
 
     # Configure Flask
