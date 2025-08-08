@@ -1,9 +1,10 @@
 import logging
 import datetime as dt
-from collections import defaultdict
 import pandas as pd
+from collections import defaultdict
 
 from ..models import EchoCounts, db
+
 
 # Buffer for accumulating echo counts per site
 echo_buffer = defaultdict(lambda: {

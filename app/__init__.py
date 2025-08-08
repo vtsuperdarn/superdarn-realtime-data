@@ -11,6 +11,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 from .extensions import db 
 from .socket_server import start_socketio_listeners
+from .utils import schedule_echo_deletion
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -36,6 +37,8 @@ def create_app():
     
     with app.app_context(): 
         db.create_all()
+        
+    schedule_echo_deletion(app)
 
     # Configure SocketIO
     socketio = SocketIO(app, cors_allowed_origins="*")
