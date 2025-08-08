@@ -46,20 +46,37 @@ To output the status of the server, run:<br>
 
 ## File Structure
 
-### socket_server.py
+### run.py
 - Main entry point
-- Handles starting the Flask Socket.IO server as well as starting the background tasks that listen to the radar sockets
+- Run in a shell to run in debug mode. Otherwise, start using the ``rt-data-sockets`` service
 
-### radar_client.py
-- Handles connecting/disconnecting to radar sockets and reading incoming packets
-- Currently, all radars other than the Canadian radars use the RadarClient for connections (standard socket protocol)
-
-### canada_connections.py
-- Handles connecting/disconnecting to Canadian radars which use ZMQ sockets
-- ZMQ is a different socket protocol which is why these radars have to be handled differently
-
-### process_dmap.py
-- Handles processing a DMAP packet as a JSON file
+### ``app``
+- ### socket_server.py
+    - Handles starting the Flask Socket.IO server as well as starting the background tasks that listen to the radar sockets
+- ### models.py
+    - Where the database models are defined using Flask-SQLAlchemy's ORM
+- ### routes.py
+    - Where the Flask routes are defined
+- ### utils.py
+    - Helper functions
+- ### extensions.py
+    - Setup for Flask extensions
+- ### ``radar_connections``
+    - Functionality for connecting/disconnecting to SuperDARN radars
+    - ### radar_client.py
+        - Handles connecting/disconnecting to radar sockets and reading incoming packets
+        - Currently, all radars other than the Canadian radars use the RadarClient for connections (standard socket protocol)
+    - ### canada_connections.py
+        - Handles connecting/disconnecting to Canadian radars which use ZMQ sockets
+        - ZMQ is a different socket protocol which is why these radars have to be handled differently
+- ### ``data_processing``
+    - Files related to processing data received from the radars
+    - ### process_dmap.py
+        - Handles processing a DMAP packet as a JSON file
+    - ### process_echoes.py
+        - Handles extracting echoe from a DMAP packet
+        - Storing echoes in SQL database
+        - Averaging echoes over a scan
 
 ## Nginx Proxy Setup
 
@@ -72,17 +89,39 @@ server {
     location /socket.io/ {
         proxy_pass http://localhost:5003;
         proxy_http_version 1.1;
-	proxy_buffering off;
+	    proxy_buffering off;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
+
+    # Proxy all other requests to Flask app
+    location / {
+        proxy_pass http://localhost:5003;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Handle OPTIONS preflight requests for CORS
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+            add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization";
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 204;
+        }
+    }
 }
 ```
 
-Any connections to ``http://vt.superdarn.org:81/socket.io/`` are routed to ``http://localhost:5003`` where the Socket.IO server runs. 
+Any connections to ``http://vt.superdarn.org:81/socket.io/`` are routed to ``http://localhost:5003`` where the Socket.IO server runs.
+The '/' route is also proxied so any requests to regular Flask routes are also routed to ``http://localhost:5003``.
 
 ### Enabling the config
 

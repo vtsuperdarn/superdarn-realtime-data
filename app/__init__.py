@@ -15,18 +15,19 @@ from .utils import schedule_echo_deletion
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def create_app():
-    """Create and configure the Flask application. Returns the Flask application instance and SocketIO instance"""
-    app = Flask(__name__)
-
-    CORS(app, origins=[
+ALLOWED_ORIGINS = [
         "http://localhost:5002",
         "http://127.0.0.1:5002",
         "http://localhost",
         "http://127.0.0.1",
-        "vt.superdarn.org",
-        "vt.superdarn.org:81"
-    ])
+        "http://vt.superdarn.org",
+        "http://vt.superdarn.org:80",
+        "http://vt.superdarn.org:81"
+    ]
+
+def create_app():
+    """Create and configure the Flask application. Returns the Flask application instance and SocketIO instance"""
+    app = Flask(__name__)
 
     # Configure Flask
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret')
@@ -43,8 +44,11 @@ def create_app():
     schedule_echo_deletion(app)
 
     # Configure SocketIO
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    socketio = SocketIO(app, cors_allowed_origins=ALLOWED_ORIGINS)
     start_socketio_listeners(socketio, app)
+
+    # Configure CORS
+    CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
     from . import routes
     app.register_blueprint(routes.bp)
