@@ -20,6 +20,9 @@ ALLOWED_ORIGINS = [
         "http://127.0.0.1:5002",
         "http://localhost",
         "http://127.0.0.1",
+        "http://superdarn.org",
+        "http://superdarn.org:80",
+        "http://superdar.org:81",
         "http://vt.superdarn.org",
         "http://vt.superdarn.org:80",
         "http://vt.superdarn.org:81"
