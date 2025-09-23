@@ -25,20 +25,35 @@ def dmap_to_json(dmap_dict: dict, site_name: str) -> dict:
     if "slist" in dmap_dict:
         slist = dmap_dict["slist"]
 
-        for pwr, s, in zip(dmap_dict["p_l"], slist):
-            power_arr[s] = float(pwr) 
-        
-        for elev, s, in zip(dmap_dict["elv"], slist):
-            elev_arr[s] = float(elev) 
-        
-        for vel, s, in zip(dmap_dict["v"], slist):
-            vel_arr[s] = float(vel) 
+        if "p_l" in dmap_dict:
+            for pwr, s, in zip(dmap_dict["p_l"], slist):
+                power_arr[s] = float(pwr)
+        else:
+            logging.warning(f"Missing p_l in dmap data for {site_name}")
 
-        for g_scatter, s, in zip(dmap_dict["gflg"], slist):
-            g_scatter_arr[s] = int(g_scatter)
+        if "elv" in dmap_dict:
+            for elev, s, in zip(dmap_dict["elv"], slist):
+                elev_arr[s] = float(elev)
+        else:
+            logging.warning(f"Missing elv in dmap data for {site_name}")
 
-        for width, s, in zip(dmap_dict["w_l"], slist):
-            width_arr[s] = float(width)
+        if "v" in dmap_dict:
+            for vel, s, in zip(dmap_dict["v"], slist):
+                vel_arr[s] = float(vel)
+        else:
+            logging.warning(f"Missing v in dmap data for {site_name}")
+
+        if "gflg" in dmap_dict: 
+            for g_scatter, s, in zip(dmap_dict["gflg"], slist):
+                g_scatter_arr[s] = int(g_scatter)
+        else:
+            logging.warning(f"Missing gflg in dmap data for {site_name}")
+
+        if "w_l" in dmap_dict:
+            for width, s, in zip(dmap_dict["w_l"], slist):
+                width_arr[s] = float(width)
+        else:
+            logging.warning(f"Missing w_l in dmap data for {site_name}")
     else:
         # Some packets do not have slist. Why?
         logging.debug(f"Missing slist in dmap data for {site_name}") 
