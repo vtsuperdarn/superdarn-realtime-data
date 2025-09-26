@@ -2,6 +2,8 @@
 
 [Flask Socket IO](https://flask-socketio.readthedocs.io/en/latest/index.html) server providing access to realtime data from SuperDARN radars. Rather than connecting to radars directly from the front-end, this server aggregates data from multiple SuperDARN radars and sends them over a socket (Socket.IO protocol) in JSON format.
 
+!["A Web-Based Tool for Real-time Analysis of SuperDARN Space Weather Radar Data"](poster.png)
+
 ## Running the Server
 
 ### Starting/Stopping the Server
