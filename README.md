@@ -4,6 +4,94 @@
 
 !["A Web-Based Tool for Real-time Analysis of SuperDARN Space Weather Radar Data"](poster.png)
 
+## Using the API
+
+### Connecting to the WebSocket
+1. Install [Socket.IO client library](https://socket.io/docs/v4/client-initialization/)
+2. Connect to the server using the following code:
+```javascript
+const socket = io('vt.superdarn.org:81', {
+    path: '/socket.io/',
+    transports: ['websocket']
+});
+```
+3. Listen for data from a particular radar site using the following code. Replace `siteName` with the radar site name (e.g. "sas", "bks", etc.):
+```javascript
+socket.on(siteName, (jsonData) => {
+    // Handle data (will be called each time new data is sent from the radar)
+});
+```
+
+#### Example JSON Response
+```json
+{
+    "site_name": "hok",
+    "beam": 3,
+    "cp": "normalscan(151)",
+    "frang": 180,
+    "nave": 26,
+    "freq": 11075,
+    "noise": 21,
+    "nrang": 110,
+    "rsep": 45,
+    "stid": 40,
+    "scan": 0,
+    "gflg": [1, 1, ..., 1, 0],
+    "v": [-2.277430534362793, -0.12151902168989182, ..., 5.231213092803955, -255.970703125],
+    "time": "2025-09-28 15:41:36.000000",
+    "elevation": [0, 0, ..., 32.57284927368164, 36.64323806762695],
+    "power": [0, 0, ..., 6.49928617477417, 0],
+    "velocity": [0, 0, ..., -255.970703125, 0],
+    "width": [0, 0, ..., 135.81903076171875, 0],
+    "g_scatter": [1, 0, ..., 1, 0]
+}
+```
+
+
+### Retrieving Echo Data
+
+#### `/echoes/` Endpoint
+
+Echo data can be retrieved using the `/echoes/` endpoint with the following parameters:
+
+**Request Parameters:**
+- `site_name` (required) - Three letter radar code (e.g., "sas", "bks", "kod")
+- `start` (optional) - ISO timestamp for start time (default: 24 hours ago)
+- `end` (optional) - ISO timestamp for end time (default: current time)
+- `save` (optional) - Boolean (true/false) to download as CSV instead of JSON
+
+**Example Request:**
+```
+GET /echoes/?site_name=kod&start=2025-09-27T00:00:00Z&end=2025-09-28T00:00:00Z
+```
+or in JavaScript:
+```javascript
+const url = new URL('http://vt.superdarn.org:81/echoes/');
+url.searchParams.set('site_name', 'kod');
+url.searchParams.set('start', '2025-09-27T00:00:00Z');
+url.searchParams.set('end', '2025-09-28T00:00:00Z');
+
+fetch(url)
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+**JSON Response Fields:**
+- `timestamp` - Array of ISO timestamps
+- `total_echoes` - Array of total echo counts averaged over each scan
+- `total_ionospheric_echoes` - Array of ionospheric echo counts averaged over each scan
+- `ground_scatter_echoes` - Array of ground scatter echo counts averaged over each scan
+
+**Example Response:**
+```json
+{
+  "timestamp": ["2025-09-27T00:00:00Z", "2025-09-27T00:02:00Z"],
+  "total_echoes": [125, 138],
+  "total_ionospheric_echoes": [89, 95],
+  "ground_scatter_echoes": [36, 43]
+}
+``` 
+
 ## Running the Server
 
 ### Starting/Stopping the Server
