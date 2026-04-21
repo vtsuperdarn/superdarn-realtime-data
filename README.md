@@ -98,7 +98,7 @@ fetch(url)
 The following commands can be used to start/stop the server.
 - **Start**: ``sudo systemctl start rt-data-sockets``
 - **Stop**: ``sudo systemctl stop rt-data-sockets``
-- **Retart**: ``sudo systemctl restart rt-data-sockets``
+- **Restart**: ``sudo systemctl restart rt-data-sockets``
 
 ### Output Server Status to Terminal
 To view a life feed of the server output in the terminal, run:<br>
